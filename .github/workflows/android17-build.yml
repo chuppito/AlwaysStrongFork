@@ -1,0 +1,57 @@
+name: Android 17 - build verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - chatgpt/android17-build
+    paths:
+      - 'build.sh'
+      - 'module/**'
+      - 'module-variants/**'
+      - 'attest/**'
+      - 'native/**'
+      - '.github/workflows/android17-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package and verify ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout pinned branch
+        uses: actions/checkout@v4
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends zip unzip
+      - name: Use committed native prebuilts
+        run: find native -path '*/prebuilt/*' -type f -exec touch {} +
+      - name: Build default variant
+        run: bash build.sh --variant fork --clean
+      - name: Validate installable archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          zips=(out/AlwaysStrong-*.zip)
+          if (( ${#zips[@]} != 1 )); then
+            echo "Expected exactly one ZIP; found ${#zips[@]}" >&2
+            exit 1
+          fi
+          unzip -t "${zips[0]}" | tail -3
+          unzip -Z1 "${zips[0]}" | grep -Eq '(^|/)module\.prop$'
+          unzip -Z1 "${zips[0]}" | grep -Eq '(^|/)customize\.sh$|(^|/)install\.sh$'
+          sha256sum "${zips[0]}" | tee out/SHA256SUMS.txt
+      - name: Upload test artifact (ZIP inside artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlwaysStrong-android17-test
+          path: |
+            out/AlwaysStrong-*.zip
+            out/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
