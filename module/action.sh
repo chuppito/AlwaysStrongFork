@@ -353,3 +353,10 @@ if { [ "$KSU" = "true" ] || [ "$APATCH" = "true" ]; } \
    && [ "$KSU_NEXT" != "true" ] && [ "$WKSU" != "true" ] && [ "$MMRL" != "true" ]; then
     sleep 2
 fi
+
+# A displayed "done" is not proof that a usable fingerprint was configured.
+# Propagate a failed PIF setup to the first-boot caller so it can retry.
+if [ "${ENGINE:-none}" != "none" ] && [ "${FP_OK:-0}" != "1" ]; then
+    echo "AlwaysStrong: no usable fingerprint configured (check autopif.log)" >&2
+    exit 1
+fi

@@ -160,7 +160,7 @@ while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 2; done
 #     (the same name the RS daemon uses), so the name-based kill would catch the
 #     LIVE teesim daemon. Skip the "TEESimulator" name entirely when teesim is the
 #     active engine; for the RS engine (started late, below) it's still stale-cleanup.
-for proc in supervisor daemon aswatcher; do
+for proc in supervisor aswatcher; do
   for pid in $(pidof "$proc" 2>/dev/null); do
     kill -9 "$pid" 2>/dev/null
   done
@@ -307,12 +307,18 @@ if [ ! -f "$MODDIR/.bootstrapped" ]; then
     done
     if [ -n "$BB" ]; then
         AS_FAST=1 "$BB" sh "$MODDIR/action.sh" >"$AS_LOGS/action-boot.log" 2>&1
+        BOOT_RC=$?
     else
         AS_FAST=1 sh "$MODDIR/action.sh" >"$AS_LOGS/action-boot.log" 2>&1
+        BOOT_RC=$?
     fi
 
-    touch "$MODDIR/.bootstrapped"
-    log -t "AlwaysStrong-boot" "first boot: Action done"
+    if [ "$BOOT_RC" -eq 0 ]; then
+        touch "$MODDIR/.bootstrapped"
+        log -t "AlwaysStrong-boot" "first boot: Action completed"
+    else
+        log -t "AlwaysStrong-boot" "first boot: Action failed (rc=$BOOT_RC); will retry next boot; see $AS_LOGS/action-boot.log"
+    fi
 }&
 fi
 
