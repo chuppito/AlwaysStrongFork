@@ -24,6 +24,8 @@
 #   1  crawl/parse failed (nothing written)
 
 CONFIG_DIR=/data/adb/tricky_store
+# Optional device preference. Only apply when a live Canary build exists.
+PREFERRED_CANARY_DEVICE="${PREFERRED_CANARY_DEVICE:-bluejay}"
 TARGET="$CONFIG_DIR/pif.prop"
 TIMEOUT=15   # idle timeout per fetch; the outer per-fetch cap is TIMEOUT + CAP_EXTRA
 CAP_EXTRA=60
@@ -205,7 +207,8 @@ fi
 # Update on rebuild as Google's beta lineup rolls forward. Base "Pixel 9" (tokay)
 # is deliberately omitted: Google stopped granting it STRONG even with a valid
 # keybox, so picking it would silently demote the device.
-PIXEL_DEVICES="caiman|Pixel 9 Pro
+PIXEL_DEVICES="bluejay|Pixel 6a
+caiman|Pixel 9 Pro
 komodo|Pixel 9 Pro XL
 tegu|Pixel 9a
 comet|Pixel 9 Pro Fold
@@ -240,8 +243,15 @@ query_product() { # $1=device $2=model -> sets PRODUCT/DEVICE/MODEL on success
     PRODUCT="$_p"; DEVICE="$_d"; MODEL="$_m"
 }
 
+# Prefer the explicitly selected Pixel 6a Canary, if available.
+# Never invent a build ID or silently present a stable build as Canary.
+if [ -n "$PREFERRED_CANARY_DEVICE" ]; then
+    _preferred_model=$(printf '%s\n' "$PIXEL_DEVICES" | $GREP -m1 "^${PREFERRED_CANARY_DEVICE}|" | cut -d'|' -f2)
+    [ -n "$_preferred_model" ] && query_product "$PREFERRED_CANARY_DEVICE" "$_preferred_model"
+fi
+
 # Prefer THIS device's own identity when we ship it, else a random rotation.
-if [ -n "$THISDEV" ]; then
+if [ -z "$PRODUCT" ] && [ -n "$THISDEV" ]; then
     _this_model=$(printf '%s\n' "$PIXEL_DEVICES" | $GREP -m1 "^${THISDEV}|" | cut -d'|' -f2)
     [ -n "$_this_model" ] && query_product "$THISDEV" "$_this_model"
 fi
