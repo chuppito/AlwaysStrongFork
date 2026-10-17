@@ -25,8 +25,10 @@ MODE="${1:-}"
 # --- find the dotted patch (YYYY-MM-DD) from a pif file -------------------
 SP=""
 SRC=""
-for f in "$CONFIG_DIR/custom.pif.prop" "$CONFIG_DIR/pif.prop" \
-         "$MODPATH/custom.pif.prop" "$MODPATH/pif.prop"; do
+# Prefer the generated active profile over stale custom/backup profiles.
+# A custom profile is only a fallback when no active generated profile exists.
+for f in "$CONFIG_DIR/pif.prop" "$MODPATH/pif.prop" \
+         "$CONFIG_DIR/custom.pif.prop" "$MODPATH/custom.pif.prop"; do
     [ -s "$f" ] || continue
     SP=$(grep -m1 '^SECURITY_PATCH=' "$f" | cut -d= -f2- | tr -d ' "'\''\r')
     [ -n "$SP" ] && { SRC="$f"; break; }
