@@ -97,7 +97,7 @@ bounded() { _bs="$1"; shift; if [ -n "$TO" ]; then $TO "$_bs" "$@"; else "$@"; f
 # aimed at a scratch dir and those lines are stripped — the engine adapter
 # appends the set its own zygisk reads. Seeding the scratch copy from the
 # current pif.prop keeps asfetch's security-patch reuse working.
-if [ -n "$ABI" ] && [ -x "$ASFETCH" ]; then
+if [ -z "$PREFERRED_CANARY_DEVICE" ] && [ -n "$ABI" ] && [ -x "$ASFETCH" ]; then
     NW="$CONFIG_DIR/.pif_asfetch.$$"
     mkdir -p "$NW"
     # The caller bounds us with `timeout`, so a SIGTERM lands mid-fetch often
@@ -251,12 +251,12 @@ if [ -n "$PREFERRED_CANARY_DEVICE" ]; then
 fi
 
 # Prefer THIS device's own identity when we ship it, else a random rotation.
-if [ -z "$PRODUCT" ] && [ -n "$THISDEV" ]; then
+if [ -z "$PRODUCT" ] && [ -z "$PREFERRED_CANARY_DEVICE" ] && [ -n "$THISDEV" ]; then
     _this_model=$(printf '%s\n' "$PIXEL_DEVICES" | $GREP -m1 "^${THISDEV}|" | cut -d'|' -f2)
     [ -n "$_this_model" ] && query_product "$THISDEV" "$_this_model"
 fi
 
-if [ -z "$PRODUCT" ]; then
+if [ -z "$PRODUCT" ] && [ -z "$PREFERRED_CANARY_DEVICE" ]; then
     R="${RANDOM:-$$}"
     START=$(( R % NDEV ))
     I=0
@@ -270,7 +270,7 @@ if [ -z "$PRODUCT" ]; then
         query_product "${LINE%%|*}" "${LINE#*|}" && break
     done
 fi
-{ [ -z "$PRODUCT" ] || [ -z "$ID" ] || [ -z "$INCREMENTAL" ]; } && { log "no canary build found."; exit 1; }
+{ [ -z "$PRODUCT" ] || [ -z "$ID" ] || [ -z "$INCREMENTAL" ]; } && { log "no Canary build available for ${PREFERRED_CANARY_DEVICE:-any supported Pixel}; existing fingerprint unchanged."; exit 1; }
 log "device: ${MODEL:-?} ($PRODUCT) build $ID"
 
 # ---- 4. security patch: reuse the shared canary patch, else derive from ID ----
