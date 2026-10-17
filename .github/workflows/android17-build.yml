@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - chatgpt/android17-build
+      - main
     paths:
       - 'build.sh'
       - 'module/**'
@@ -14,7 +15,7 @@ on:
       - '.github/workflows/android17-build.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   package:
@@ -55,3 +56,19 @@ jobs:
             out/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish direct-install ZIP on main
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          zips=(out/AlwaysStrong-*.zip)
+          tag=android17-latest
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --target "$GITHUB_SHA" --title "AlwaysStrong Android 17 - latest test build" --notes "Automated test build from main. ZIP is directly installable; Android integrity certification is not guaranteed." --prerelease
+          fi
+          gh release upload "$tag" "${zips[0]}" out/SHA256SUMS.txt --clobber
+          echo "Direct ZIP: https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$(basename "${zips[0]}")" >> "$GITHUB_STEP_SUMMARY"
