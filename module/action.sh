@@ -241,7 +241,7 @@ if [ -x "$MODPATH/pif_native_fetch.sh" ]; then
     [ "$FP_OK" = 1 ] && FP_SRC="native"
 fi
 
-if [ "$FP_OK" = 0 ]; then
+if [ "$FP_OK" = 0 ] && [ -z "${PREFERRED_CANARY_DEVICE:-bluejay}" ]; then
     row "🔄" "trying with fallback"
     sleep 1
 
@@ -272,6 +272,9 @@ if [ "$FP_OK" = 0 ]; then
     fi
 fi
 
+if [ "$FP_OK" = 0 ] && [ -n "${PREFERRED_CANARY_DEVICE:-bluejay}" ]; then
+    row "⚠️" "preferred Canary unavailable; fingerprint unchanged"
+fi
 case "$FP_SRC" in
     pif|native) row "🌐" "fingerprint ok" ;;
     local)      row "🌐" "fingerprint ok (local)" ;;
