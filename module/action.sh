@@ -257,18 +257,11 @@ if [ "$FP_OK" = 0 ]; then
         >>"$AS_LOGS/autopif.log" 2>&1 && FP_OK=1
     [ "$FP_OK" = 1 ] && FP_SRC="pif"
 
-    # 3. shipped static props (alternate 2 each tap) — installed through the
-    #    engine adapter like the fetched ones, so they land in the right file.
+    # 3. Preserve the last installed identity when the requested bluejay
+    #    Canary build is unavailable. Never silently switch to husky/tokay.
     if [ "$FP_OK" = 0 ]; then
-        IDX=$(st_get fp_idx)
-        if [ "$IDX" = "2" ]; then IDX=1; else IDX=2; fi
-        st_set fp_idx "$IDX"
-
-        FB="$MODPATH/pif_fallback_${IDX}.prop"
-        if [ -s "$FB" ] && grep -q "FINGERPRINT=" "$FB" && apply_pif "$FB"; then
-            cp -f "$FB" "$CONFIG_DIR/pif.prop" 2>/dev/null
-            FP_OK=1; FP_SRC="local"
-        fi
+        row "⚠️" "Pixel 6a Canary unavailable; keeping current fingerprint"
+        [ -s "$CONFIG_DIR/pif.prop" ] && FP_OK=1 && FP_SRC="preserved"
     fi
 fi
 
