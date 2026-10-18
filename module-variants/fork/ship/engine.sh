@@ -86,7 +86,9 @@ engine_install_pif() {
 # fails. Leaves the engine's prop file in place. 0 on success.
 engine_autopif() {
     [ -f "$MODPATH/autopif4.sh" ] || return 1
-    sh "$MODPATH/autopif4.sh" -s -m || return 1
+    # Bluejay-only: upstream -m would select the real device (husky).
+    # Until upstream supports an explicit bluejay selector, fail closed here.
+    return 1
     [ -s "$MODPATH/custom.pif.prop" ] || return 1
     engine_enforce_spoof
     return 0
