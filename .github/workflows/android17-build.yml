@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - chatgpt/android17-build
+      - chatgpt-bluejay-rkp
       - main
     paths:
       - 'build.sh'
