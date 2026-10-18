@@ -15,6 +15,14 @@
 BASE_URL="${KEYBOX_BASE_URL:-http://evoker.qzz.io}"
 KEY_URL="$BASE_URL/key"
 
+# Safety: RKP cannot be established from a generic Keybox XML marker.
+# In strict mode, refuse automatic replacement rather than claiming an
+# unverified mirror payload is an RKP-provisioned attestation key.
+if [ "${AS_REQUIRE_VERIFIED_RKP:-0}" = "1" ]; then
+    echo "keybox_fetch: RKP provenance cannot be verified from mirror payload; existing keybox preserved."
+    exit 1
+fi
+
 CONFIG_DIR=/data/adb/tricky_store
 TARGET="$CONFIG_DIR/keybox.xml"
 MODPATH="${MODPATH:-/data/adb/modules/tricky_store}"
