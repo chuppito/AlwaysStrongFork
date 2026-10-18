@@ -95,7 +95,9 @@ bounded() { _bs="$1"; shift; if [ -n "$TO" ]; then $TO "$_bs" "$@"; else "$@"; f
 # aimed at a scratch dir and those lines are stripped — the engine adapter
 # appends the set its own zygisk reads. Seeding the scratch copy from the
 # current pif.prop keeps asfetch's security-patch reuse working.
-if [ -n "$ABI" ] && [ -x "$ASFETCH" ]; then
+# Bluejay-only mode: bypass the prebuilt native random-device picker.
+# The shell path below explicitly queries bluejay_beta.
+if false; then
     NW="$CONFIG_DIR/.pif_asfetch.$$"
     mkdir -p "$NW"
     # The caller bounds us with `timeout`, so a SIGTERM lands mid-fetch often
@@ -205,13 +207,7 @@ fi
 # Update on rebuild as Google's beta lineup rolls forward. Base "Pixel 9" (tokay)
 # is deliberately omitted: Google stopped granting it STRONG even with a valid
 # keybox, so picking it would silently demote the device.
-PIXEL_DEVICES="caiman|Pixel 9 Pro
-komodo|Pixel 9 Pro XL
-tegu|Pixel 9a
-comet|Pixel 9 Pro Fold
-frankel|Pixel 10
-blazer|Pixel 10 Pro
-felix|Pixel Fold"
+PIXEL_DEVICES="bluejay|Pixel 6a"
 NDEV=$(printf '%s\n' "$PIXEL_DEVICES" | $GREP -c .)
 
 # ---- 3. query builds per product until one yields a canary; bounded tries ----
